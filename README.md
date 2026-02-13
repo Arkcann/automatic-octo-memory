@@ -1,11 +1,6 @@
 # Chelsea Valentine Pattern App
 
-An interactive Valentine-themed web app that uses a swarm of animated particles to continuously form the name **Chelsea**.
-
-- **Default mode:** glowing heart particles
-- **Pony mode toggle:** switches particles to pony-themed emoji while keeping the Valentine ripple aesthetic
-- **Interactive ripples:** mouse/touch movement and pulse button perturb the scene
-- **Mobile-ready:** responsive canvas sizing, orientation hint for portrait phones, and a full-screen toggle for immersive viewing
+An interactive Valentine-themed web app that uses a swarm of animated hearts to continuously form the name **Chelsea**. Mouse movement, taps, and button presses generate ripple waves that push and pull the heart particles.
 
 ## Run locally
 
