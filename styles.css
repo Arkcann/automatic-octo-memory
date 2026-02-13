@@ -1,0 +1,143 @@
+:root {
+  color-scheme: dark;
+  --bg-start: #18061f;
+  --bg-end: #2b1133;
+  --pink: #ff3f8f;
+  --bright-pink: #ff8cc1;
+  --text: #ffe6f1;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+  color: var(--text);
+  background: radial-gradient(circle at top, #3a1845 0%, var(--bg-start) 40%, var(--bg-end) 100%);
+  display: grid;
+  place-items: center;
+}
+
+main {
+  width: min(96vw, 1220px);
+  text-align: center;
+  padding: clamp(0.7rem, 2vw, 1.25rem);
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(1.6rem, 4.5vw, 3rem);
+  letter-spacing: 0.06em;
+  text-shadow: 0 0 14px #ff5ca7;
+}
+
+p {
+  margin: 0.7rem auto 1rem;
+  max-width: 62ch;
+  line-height: 1.4;
+  opacity: 0.92;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.6rem;
+  margin-bottom: 0.75rem;
+}
+
+button,
+.toggle {
+  appearance: none;
+  border: 0;
+  background: linear-gradient(135deg, #ff5da5 0%, #ff2f72 100%);
+  color: white;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  border-radius: 999px;
+  padding: 0.68rem 1.12rem;
+  cursor: pointer;
+  transition: transform 200ms ease, box-shadow 200ms ease;
+  box-shadow: 0 8px 25px #ff2f7282;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+}
+
+button:hover,
+.toggle:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px #ff2f72ad;
+}
+
+button:active,
+.toggle:active {
+  transform: translateY(0);
+}
+
+.toggle input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.toggle:has(input:checked) {
+  background: linear-gradient(135deg, #fd9ec6 0%, #ff6eb9 100%);
+  box-shadow: 0 8px 25px #ff88c599;
+  color: #4a1032;
+}
+
+.canvas-shell {
+  width: 100%;
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 16px;
+  border: 1px solid #ff9bc84d;
+  box-shadow: 0 14px 45px #0000007a, inset 0 0 30px #ff66b31f;
+  background: linear-gradient(145deg, #19081f 0%, #130515 100%);
+  touch-action: none;
+}
+
+.orientation-hint {
+  display: none;
+  margin-top: 0.55rem;
+  font-size: 0.9rem;
+  opacity: 0.75;
+}
+
+@media (max-width: 760px) {
+  p {
+    font-size: 0.95rem;
+  }
+
+  .controls {
+    gap: 0.45rem;
+  }
+
+  button,
+  .toggle {
+    font-size: 0.88rem;
+    padding: 0.64rem 0.95rem;
+  }
+}
+
+@media (max-width: 900px) and (orientation: portrait) {
+  .orientation-hint {
+    display: block;
+  }
+}
+
+:fullscreen main,
+:-webkit-full-screen main {
+  width: min(100vw, 1800px);
+  max-width: 100vw;
+  padding: 0.5rem;
+}
