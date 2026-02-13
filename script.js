@@ -1,6 +1,5 @@
 const canvas = document.getElementById("heartCanvas");
 const ctx = canvas.getContext("2d");
-const pulseButton = document.getElementById("pulseButton");
 const ponyModeToggle = document.getElementById("ponyModeToggle");
 const fullscreenButton = document.getElementById("fullscreenButton");
 
@@ -16,6 +15,24 @@ const state = {
 
 const textCanvas = document.createElement("canvas");
 const textCtx = textCanvas.getContext("2d");
+
+// Source: Twemoji unicorn SVG (https://github.com/twitter/twemoji/blob/master/assets/svg/1f984.svg)
+const PONY_OUTLINE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36"><path fill="#fff" d="M36 19.854C33.518 9.923 25.006 1.909 16.031 6.832c0 0-4.522-1.496-5.174-1.948-.635-.44-1.635-.904-.912.436.423.782.875 1.672 2.403 3.317C8 12.958 9.279 18.262 7.743 21.75c-1.304 2.962-2.577 4.733-1.31 6.976 1.317 2.33 4.729 3.462 7.018 1.06 1.244-1.307.471-1.937 3.132-4.202 2.723-.543 4.394-1.791 4.394-4.375 0 0 .795-.382 1.826 6.009.456 2.818-.157 5.632-.039 8.783H36V19.854z"/></svg>`;
+
+let ponyImagePromise;
+
+function ensurePonyImage() {
+  if (ponyImagePromise) return ponyImagePromise;
+
+  ponyImagePromise = new Promise((resolve) => {
+    const ponyImage = new Image();
+    ponyImage.onload = () => resolve(ponyImage);
+    ponyImage.onerror = () => resolve(null);
+    ponyImage.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(PONY_OUTLINE_SVG)}`;
+  });
+
+  return ponyImagePromise;
+}
 
 function setCanvasSize() {
   const landscape = window.matchMedia("(orientation: landscape)").matches;
@@ -65,9 +82,51 @@ function buildTextTargets() {
   return points;
 }
 
-function rebuildParticles(resetPositions = false) {
-  state.targets = buildTextTargets();
-  const count = Math.min(1050, Math.max(220, state.targets.length));
+function buildPonyTargets(ponyImage) {
+  if (!ponyImage) return buildTextTargets();
+
+  textCtx.clearRect(0, 0, textCanvas.width, textCanvas.height);
+
+  const size = Math.min(canvas.width * 0.46, canvas.height * 0.64);
+  const drawWidth = size;
+  const drawHeight = size;
+  const offsetX = (canvas.width - drawWidth) / 2;
+  const offsetY = (canvas.height - drawHeight) / 2;
+
+  textCtx.drawImage(ponyImage, offsetX, offsetY, drawWidth, drawHeight);
+
+  const pixels = textCtx.getImageData(0, 0, textCanvas.width, textCanvas.height).data;
+  const points = [];
+  const gap = Math.max(10, Math.floor(canvas.width / 82));
+
+  for (let y = gap; y < canvas.height - gap; y += gap) {
+    for (let x = gap; x < canvas.width - gap; x += gap) {
+      const index = (y * canvas.width + x) * 4 + 3;
+      const alpha = pixels[index];
+      if (alpha < 70) continue;
+
+      const left = pixels[(y * canvas.width + (x - gap)) * 4 + 3];
+      const right = pixels[(y * canvas.width + (x + gap)) * 4 + 3];
+      const up = pixels[((y - gap) * canvas.width + x) * 4 + 3];
+      const down = pixels[((y + gap) * canvas.width + x) * 4 + 3];
+      const isEdge = left < 70 || right < 70 || up < 70 || down < 70;
+
+      if (isEdge || Math.random() < 0.08) {
+        points.push({ x, y });
+      }
+    }
+  }
+
+  return points;
+}
+
+async function rebuildParticles(resetPositions = false) {
+  const ponyImage = state.ponyMode ? await ensurePonyImage() : null;
+  state.targets = state.ponyMode ? buildPonyTargets(ponyImage) : buildTextTargets();
+
+  const count = state.ponyMode
+    ? Math.min(420, Math.max(150, state.targets.length))
+    : Math.min(1050, Math.max(220, state.targets.length));
 
   if (state.particles.length > count) {
     state.particles.length = count;
@@ -126,30 +185,6 @@ function drawHeart(x, y, size, glow = 0, tone = 0) {
   ctx.restore();
 }
 
-const PONY_HEART_TEMPLATE = [
-  { x: -0.8, y: -0.55, s: 0.48, t: -7 },
-  { x: -0.25, y: -0.62, s: 0.6, t: -2 },
-  { x: 0.45, y: -0.52, s: 0.53, t: 3 },
-  { x: -0.68, y: 0.1, s: 0.66, t: -5 },
-  { x: -0.05, y: 0.12, s: 0.7, t: 1 },
-  { x: 0.58, y: 0.18, s: 0.63, t: 6 },
-  { x: -0.38, y: 0.76, s: 0.56, t: -3 },
-  { x: 0.34, y: 0.78, s: 0.54, t: 5 },
-  { x: -1.12, y: 0.15, s: 0.5, t: 10 },
-];
-
-function drawPony(x, y, size, glow = 0) {
-  for (const heart of PONY_HEART_TEMPLATE) {
-    drawHeart(
-      x + heart.x * size * 1.4,
-      y + heart.y * size * 1.3,
-      size * heart.s,
-      glow,
-      heart.t,
-    );
-  }
-}
-
 function applyPointerInfluence(x, y, strength = 1.2) {
   state.pointer.x = x;
   state.pointer.y = y;
@@ -184,8 +219,8 @@ function animate() {
   });
 
   state.particles.forEach((particle) => {
-    const targetPull = 0.017;
-    const jitter = Math.sin(state.t * 2.4 + particle.phase) * 0.34;
+    const targetPull = state.ponyMode ? 0.021 : 0.017;
+    const jitter = Math.sin(state.t * 2.4 + particle.phase) * (state.ponyMode ? 0.2 : 0.34);
 
     particle.vx += (particle.target.x - particle.x) * targetPull;
     particle.vy += (particle.target.y - particle.y) * targetPull;
@@ -214,18 +249,15 @@ function animate() {
       }
     }
 
-    particle.vx *= 0.88;
-    particle.vy *= 0.88;
+    particle.vx *= state.ponyMode ? 0.9 : 0.88;
+    particle.vy *= state.ponyMode ? 0.9 : 0.88;
 
     particle.x += particle.vx + jitter;
     particle.y += particle.vy + jitter * 0.6;
 
     const glow = Math.min(18, Math.abs(particle.vx) + Math.abs(particle.vy) + 2);
-    if (state.ponyMode) {
-      drawPony(particle.x, particle.y, particle.size, glow * 0.7 + particle.hueShift * 0.02);
-    } else {
-      drawHeart(particle.x, particle.y, particle.size, glow * 0.8 + particle.hueShift * 0.04);
-    }
+    const ponyTone = state.ponyMode ? -22 : 0;
+    drawHeart(particle.x, particle.y, particle.size, glow * 0.8 + particle.hueShift * 0.04, ponyTone);
   });
 
   state.pointer.force *= 0.93;
@@ -236,20 +268,22 @@ function animate() {
   requestAnimationFrame(animate);
 }
 
-function updatePointer(event, strength = 1.2) {
+function updatePointer(event, strength = 1.2, createRipple = false, magnitude = 1.6) {
   const rect = canvas.getBoundingClientRect();
   const scaleX = canvas.width / rect.width;
   const scaleY = canvas.height / rect.height;
   const x = (event.clientX - rect.left) * scaleX;
   const y = (event.clientY - rect.top) * scaleY;
   applyPointerInfluence(x, y, strength);
-  addRipple(state.pointer.x, state.pointer.y, 0.5);
+
+  if (createRipple) {
+    addRipple(state.pointer.x, state.pointer.y, magnitude);
+  }
 }
 
 canvas.addEventListener("mousemove", (event) => updatePointer(event, 0.85));
 canvas.addEventListener("click", (event) => {
-  updatePointer(event, 2.2);
-  addRipple(state.pointer.x, state.pointer.y, 2);
+  updatePointer(event, 2.2, true, 2);
 });
 
 canvas.addEventListener(
@@ -267,15 +301,15 @@ canvas.addEventListener(
   (event) => {
     const touch = event.touches[0];
     if (!touch) return;
-    updatePointer({ clientX: touch.clientX, clientY: touch.clientY }, 2.4);
-    addRipple(state.pointer.x, state.pointer.y, 2);
+    updatePointer({ clientX: touch.clientX, clientY: touch.clientY }, 2.4, true, 2);
   },
   { passive: true },
 );
 
-ponyModeToggle.addEventListener("change", (event) => {
+ponyModeToggle.addEventListener("change", async (event) => {
   state.ponyMode = event.target.checked;
-  addRipple(canvas.width / 2, canvas.height / 2, 3.2);
+  await rebuildParticles(true);
+  addRipple(canvas.width / 2, canvas.height / 2, 2.4);
 });
 
 fullscreenButton.addEventListener("click", async () => {
@@ -308,14 +342,6 @@ document.addEventListener("fullscreenchange", () => {
   setCanvasSize();
   rebuildParticles(false);
 });
-
-pulseButton.addEventListener("click", () => {
-  addRipple(canvas.width / 2, canvas.height / 2, 4);
-});
-
-setInterval(() => {
-  addRipple(Math.random() * canvas.width, Math.random() * canvas.height, 0.9);
-}, 1300);
 
 let resizeDebounce;
 window.addEventListener("resize", () => {
