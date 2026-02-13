@@ -312,7 +312,7 @@ ponyModeToggle.addEventListener("change", async (event) => {
   addRipple(canvas.width / 2, canvas.height / 2, 2.4);
 });
 
-fullscreenButton?.addEventListener("click", async () => {
+fullscreenButton.addEventListener("click", async () => {
   const fullscreenTarget = document.documentElement;
 
   try {
