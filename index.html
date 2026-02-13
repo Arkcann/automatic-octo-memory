@@ -2,19 +2,31 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Chelsea Valentine Hearts</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <main>
+    <main id="app">
       <h1>For Chelsea 💖</h1>
       <p>
         Move your mouse (or tap) to send ripples through a field of hearts. The
         pattern constantly reforms to spell <strong>Chelsea</strong>.
       </p>
-      <canvas id="heartCanvas" width="1200" height="700"></canvas>
-      <button id="pulseButton" type="button">Send a Love Pulse</button>
+
+      <div class="controls">
+        <button id="pulseButton" type="button">Send a Love Pulse</button>
+        <label class="toggle" for="ponyModeToggle">
+          <input id="ponyModeToggle" type="checkbox" />
+          <span>Pony Mode 🐴</span>
+        </label>
+        <button id="fullscreenButton" type="button">Toggle Full Screen</button>
+      </div>
+
+      <div class="canvas-shell" id="canvasShell">
+        <canvas id="heartCanvas" width="1200" height="700"></canvas>
+        <p class="orientation-hint">Tip: Rotate to landscape for a wider scene on mobile.</p>
+      </div>
     </main>
     <script src="script.js"></script>
   </body>
