@@ -3,11 +3,10 @@ const ctx = canvas.getContext("2d");
 const pulseButton = document.getElementById("pulseButton");
 const ponyModeToggle = document.getElementById("ponyModeToggle");
 const fullscreenButton = document.getElementById("fullscreenButton");
-const app = document.getElementById("app");
 
 const state = {
   particles: [],
-  pointer: { x: 0, y: 0 },
+  pointer: { x: 0, y: 0, force: 0 },
   ripples: [],
   t: 0,
   ponyMode: false,
@@ -37,8 +36,10 @@ function setCanvasSize() {
   textCanvas.width = canvas.width;
   textCanvas.height = canvas.height;
 
-  state.pointer.x = canvas.width / 2;
-  state.pointer.y = canvas.height / 2;
+  if (state.pointer.force > 0) {
+    state.pointer.x = Math.min(canvas.width, Math.max(0, state.pointer.x));
+    state.pointer.y = Math.min(canvas.height, Math.max(0, state.pointer.y));
+  }
 }
 
 function buildTextTargets() {
@@ -97,16 +98,7 @@ function rebuildParticles(resetPositions = false) {
   });
 }
 
-function drawHeart(x, y, size, glow = 0) {
-  ctx.save();
-  ctx.translate(x, y);
-  const scale = size / 18;
-  ctx.scale(scale, scale);
-
-  ctx.shadowBlur = 8 + glow;
-  ctx.shadowColor = `rgba(255, 98, 173, ${0.7 + glow / 25})`;
-  ctx.fillStyle = `hsl(${335 + glow}, 100%, ${65 + glow / 2}%)`;
-
+function drawHeartShape() {
   ctx.beginPath();
   ctx.moveTo(0, 6);
   ctx.bezierCurveTo(0, 2, -7, -4, -12, -1);
@@ -116,21 +108,52 @@ function drawHeart(x, y, size, glow = 0) {
   ctx.bezierCurveTo(15.5, 8, 16, 1.5, 12, -1);
   ctx.bezierCurveTo(7, -4, 0, 2, 0, 6);
   ctx.closePath();
+}
+
+function drawHeart(x, y, size, glow = 0, tone = 0) {
+  ctx.save();
+  ctx.translate(x, y);
+  const scale = size / 18;
+  ctx.scale(scale, scale);
+
+  ctx.shadowBlur = 8 + glow;
+  ctx.shadowColor = `rgba(255, 98, 173, ${0.7 + glow / 25})`;
+  ctx.fillStyle = `hsl(${335 + glow + tone}, 100%, ${65 + glow / 2}%)`;
+
+  drawHeartShape();
   ctx.fill();
 
   ctx.restore();
 }
 
 function drawPony(x, y, size, glow = 0) {
-  ctx.save();
-  ctx.translate(x, y);
-  ctx.font = `${Math.max(14, size * 2)}px serif`;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.shadowBlur = 8 + glow;
-  ctx.shadowColor = `rgba(255, 174, 214, ${0.72 + glow / 24})`;
-  ctx.fillText("🐴", 0, 0);
-  ctx.restore();
+  const ponyHearts = [
+    { x: -0.8, y: -0.55, s: 0.48, t: -7 },
+    { x: -0.25, y: -0.62, s: 0.6, t: -2 },
+    { x: 0.45, y: -0.52, s: 0.53, t: 3 },
+    { x: -0.68, y: 0.1, s: 0.66, t: -5 },
+    { x: -0.05, y: 0.12, s: 0.7, t: 1 },
+    { x: 0.58, y: 0.18, s: 0.63, t: 6 },
+    { x: -0.38, y: 0.76, s: 0.56, t: -3 },
+    { x: 0.34, y: 0.78, s: 0.54, t: 5 },
+    { x: -1.12, y: 0.15, s: 0.5, t: 10 },
+  ];
+
+  for (const heart of ponyHearts) {
+    drawHeart(
+      x + heart.x * size * 1.4,
+      y + heart.y * size * 1.3,
+      size * heart.s,
+      glow,
+      heart.t,
+    );
+  }
+}
+
+function applyPointerInfluence(x, y, strength = 1.2) {
+  state.pointer.x = x;
+  state.pointer.y = y;
+  state.pointer.force = Math.max(state.pointer.force, strength);
 }
 
 function addRipple(x, y, magnitude = 1) {
@@ -171,10 +194,11 @@ function animate() {
     const dy = particle.y - state.pointer.y;
     const dist = Math.hypot(dx, dy) || 1;
 
-    if (dist < 180 * state.dpr) {
+    if (state.pointer.force > 0.001 && dist < 180 * state.dpr) {
       const push = (180 * state.dpr - dist) / (180 * state.dpr);
-      particle.vx += (dx / dist) * push * 1.4;
-      particle.vy += (dy / dist) * push * 1.4;
+      const force = 1.4 * state.pointer.force;
+      particle.vx += (dx / dist) * push * force;
+      particle.vy += (dy / dist) * push * force;
     }
 
     for (const ripple of state.ripples) {
@@ -204,21 +228,27 @@ function animate() {
     }
   });
 
+  state.pointer.force *= 0.93;
+  if (state.pointer.force < 0.003) {
+    state.pointer.force = 0;
+  }
+
   requestAnimationFrame(animate);
 }
 
-function updatePointer(event) {
+function updatePointer(event, strength = 1.2) {
   const rect = canvas.getBoundingClientRect();
   const scaleX = canvas.width / rect.width;
   const scaleY = canvas.height / rect.height;
-  state.pointer.x = (event.clientX - rect.left) * scaleX;
-  state.pointer.y = (event.clientY - rect.top) * scaleY;
+  const x = (event.clientX - rect.left) * scaleX;
+  const y = (event.clientY - rect.top) * scaleY;
+  applyPointerInfluence(x, y, strength);
   addRipple(state.pointer.x, state.pointer.y, 0.5);
 }
 
-canvas.addEventListener("mousemove", updatePointer);
+canvas.addEventListener("mousemove", (event) => updatePointer(event, 0.85));
 canvas.addEventListener("click", (event) => {
-  updatePointer(event);
+  updatePointer(event, 2.2);
   addRipple(state.pointer.x, state.pointer.y, 2);
 });
 
@@ -227,7 +257,7 @@ canvas.addEventListener(
   (event) => {
     const touch = event.touches[0];
     if (!touch) return;
-    updatePointer({ clientX: touch.clientX, clientY: touch.clientY });
+    updatePointer({ clientX: touch.clientX, clientY: touch.clientY }, 1.05);
   },
   { passive: true },
 );
@@ -237,7 +267,7 @@ canvas.addEventListener(
   (event) => {
     const touch = event.touches[0];
     if (!touch) return;
-    updatePointer({ clientX: touch.clientX, clientY: touch.clientY });
+    updatePointer({ clientX: touch.clientX, clientY: touch.clientY }, 2.4);
     addRipple(state.pointer.x, state.pointer.y, 2);
   },
   { passive: true },
@@ -249,11 +279,21 @@ ponyModeToggle.addEventListener("change", (event) => {
 });
 
 fullscreenButton.addEventListener("click", async () => {
+  const fullscreenTarget = document.documentElement;
+
   try {
     if (!document.fullscreenElement) {
-      await app.requestFullscreen();
+      if (fullscreenTarget.requestFullscreen) {
+        await fullscreenTarget.requestFullscreen();
+      } else if (fullscreenTarget.webkitRequestFullscreen) {
+        fullscreenTarget.webkitRequestFullscreen();
+      }
     } else {
-      await document.exitFullscreen();
+      if (document.exitFullscreen) {
+        await document.exitFullscreen();
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      }
     }
   } catch {
     // Ignore fullscreen errors from unsupported contexts.
@@ -262,6 +302,11 @@ fullscreenButton.addEventListener("click", async () => {
     setCanvasSize();
     rebuildParticles(false);
   }, 120);
+});
+
+document.addEventListener("fullscreenchange", () => {
+  setCanvasSize();
+  rebuildParticles(false);
 });
 
 pulseButton.addEventListener("click", () => {

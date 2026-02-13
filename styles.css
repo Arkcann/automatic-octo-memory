@@ -135,9 +135,14 @@ canvas {
   }
 }
 
-:fullscreen main,
-:-webkit-full-screen main {
+:fullscreen #app,
+:-webkit-full-screen #app {
   width: min(100vw, 1800px);
   max-width: 100vw;
   padding: 0.5rem;
+}
+
+:fullscreen body,
+:-webkit-full-screen body {
+  place-items: stretch;
 }
