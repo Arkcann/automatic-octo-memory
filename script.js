@@ -126,20 +126,20 @@ function drawHeart(x, y, size, glow = 0, tone = 0) {
   ctx.restore();
 }
 
-function drawPony(x, y, size, glow = 0) {
-  const ponyHearts = [
-    { x: -0.8, y: -0.55, s: 0.48, t: -7 },
-    { x: -0.25, y: -0.62, s: 0.6, t: -2 },
-    { x: 0.45, y: -0.52, s: 0.53, t: 3 },
-    { x: -0.68, y: 0.1, s: 0.66, t: -5 },
-    { x: -0.05, y: 0.12, s: 0.7, t: 1 },
-    { x: 0.58, y: 0.18, s: 0.63, t: 6 },
-    { x: -0.38, y: 0.76, s: 0.56, t: -3 },
-    { x: 0.34, y: 0.78, s: 0.54, t: 5 },
-    { x: -1.12, y: 0.15, s: 0.5, t: 10 },
-  ];
+const PONY_HEART_TEMPLATE = [
+  { x: -0.8, y: -0.55, s: 0.48, t: -7 },
+  { x: -0.25, y: -0.62, s: 0.6, t: -2 },
+  { x: 0.45, y: -0.52, s: 0.53, t: 3 },
+  { x: -0.68, y: 0.1, s: 0.66, t: -5 },
+  { x: -0.05, y: 0.12, s: 0.7, t: 1 },
+  { x: 0.58, y: 0.18, s: 0.63, t: 6 },
+  { x: -0.38, y: 0.76, s: 0.56, t: -3 },
+  { x: 0.34, y: 0.78, s: 0.54, t: 5 },
+  { x: -1.12, y: 0.15, s: 0.5, t: 10 },
+];
 
-  for (const heart of ponyHearts) {
+function drawPony(x, y, size, glow = 0) {
+  for (const heart of PONY_HEART_TEMPLATE) {
     drawHeart(
       x + heart.x * size * 1.4,
       y + heart.y * size * 1.3,
