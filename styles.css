@@ -1,0 +1,75 @@
+:root {
+  color-scheme: dark;
+  --bg-start: #18061f;
+  --bg-end: #2b1133;
+  --pink: #ff3f8f;
+  --bright-pink: #ff8cc1;
+  --text: #ffe6f1;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+  color: var(--text);
+  background: radial-gradient(circle at top, #3a1845 0%, var(--bg-start) 40%, var(--bg-end) 100%);
+  display: grid;
+  place-items: center;
+}
+
+main {
+  width: min(95vw, 1200px);
+  text-align: center;
+  padding: 1.25rem;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(1.8rem, 3vw, 3rem);
+  letter-spacing: 0.06em;
+  text-shadow: 0 0 14px #ff5ca7;
+}
+
+p {
+  margin: 0.7rem auto 1.1rem;
+  max-width: 62ch;
+  line-height: 1.5;
+  opacity: 0.9;
+}
+
+canvas {
+  width: 100%;
+  height: auto;
+  border-radius: 16px;
+  border: 1px solid #ff9bc84d;
+  box-shadow: 0 14px 45px #0000007a, inset 0 0 30px #ff66b31f;
+  background: linear-gradient(145deg, #19081f 0%, #130515 100%);
+}
+
+button {
+  margin-top: 1rem;
+  appearance: none;
+  border: 0;
+  background: linear-gradient(135deg, #ff5da5 0%, #ff2f72 100%);
+  color: white;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  border-radius: 999px;
+  padding: 0.8rem 1.35rem;
+  cursor: pointer;
+  transition: transform 200ms ease, box-shadow 200ms ease;
+  box-shadow: 0 8px 25px #ff2f7282;
+}
+
+button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px #ff2f72ad;
+}
+
+button:active {
+  transform: translateY(0);
+}
